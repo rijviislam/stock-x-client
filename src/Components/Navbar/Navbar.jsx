@@ -1,4 +1,6 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import Logo from "../../assets/logo.png";
 
 export default function Navbar() {
   return (
@@ -36,7 +38,10 @@ export default function Navbar() {
             </li>
           </ul>
         </div>
-        <a className="btn btn-ghost text-xl">Stock X</a>
+        {/* <a className="btn btn-ghost text-xl">Stock X</a> */}
+        <Link className="w-10 h-10">
+          <img src={Logo} alt="x" />
+        </Link>
       </div>
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
