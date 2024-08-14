@@ -98,7 +98,7 @@ export default function Login() {
             href="#"
             className="underline  text-black dark:text-teal-600"
           >
-            Sign up
+            Register
           </Link>
         </p>
       </div>
