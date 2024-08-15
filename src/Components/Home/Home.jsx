@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import Filter from "../../assets/setting.png";
 
 export default function Home() {
   const [searchName, setSearchName] = useState("");
   const [page, setPage] = useState(1);
   const [inputValue, setInputValue] = useState("");
+  const [checkedValues, setCheckedValues] = useState([]);
   const [pageCount, setPageCount] = useState(0);
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   const {
     data: products = { result: [], pagination: { pageCount: 0 } },
@@ -27,6 +30,10 @@ export default function Home() {
   useEffect(() => {
     if (products?.pagination) {
       setPageCount(products.pagination.pageCount);
+    }
+
+    if (products?.result) {
+      setFilteredProducts(products.result);
     }
   }, [products]);
 
@@ -52,8 +59,51 @@ export default function Home() {
       handleSearch();
     }
   };
+  const handleBrandFilter = (event) => {
+    const { value, checked } = event.target;
+    let updatedCheckedValues;
 
-  console.log(products);
+    if (checked) {
+      updatedCheckedValues = [...checkedValues, value];
+    } else {
+      updatedCheckedValues = checkedValues.filter((val) => val !== value);
+    }
+    console.log(updatedCheckedValues);
+    setCheckedValues(updatedCheckedValues);
+
+    const filtered =
+      // can not understand the (result) //
+      products?.result?.filter((product) => {
+        return (
+          updatedCheckedValues.length === 0 ||
+          updatedCheckedValues.includes(product.brand)
+        );
+      }) || [];
+
+    setFilteredProducts(filtered);
+  };
+  const handleCategoryFilter = (event) => {
+    const { value } = event.target;
+    const filtered = products?.result?.filter((product) => {
+      return product.category === value;
+    });
+    console.log("Category", filtered);
+  };
+
+  const checkboxData = [
+    "Nike",
+    "Adidas",
+    "Asics",
+    "Levi's",
+    "H&M",
+    "Converse",
+    "Vans",
+    "Champion",
+    "Gucci",
+    "Fossil",
+  ];
+
+  const categoryData = ["Sneakers", "Accessories", "Shoes", "Star Trek"];
   if (isLoading)
     return <span className="loading loading-bars loading-lg"></span>;
   if (isError) return <p>Error...</p>;
@@ -64,7 +114,7 @@ export default function Home() {
 
       <div className="flex justify-between px-10">
         <div className="flex mx-4 my-5">
-          <label className="input w-[400px] border-teal-500 flex items-center gap-2">
+          <label className="input w-[400px] border-teal-500 flex items-center gap-2 bg-white text-black">
             <input
               type="text"
               className="grow"
@@ -90,34 +140,68 @@ export default function Home() {
           </label>
         </div>
         <div>
-          <label htmlFor="my_modal_6" className="btn">
-            Filter
-          </label>
-
-          <input type="checkbox" id="my_modal_6" className="modal-toggle" />
-          <div className="modal" role="dialog">
-            <div className="modal-box">
-              <div className="collapse collapse-plus bg-base-200">
-                <input type="radio" name="my-accordion-3" defaultChecked />
-                <div className="collapse-title text-xl font-medium">
+          <div className="dropdown dropdown-end">
+            <div
+              tabIndex={0}
+              role="button"
+              className="w-[100px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black"
+            >
+              {" "}
+              Filter <img className="w-5 h-5" src={Filter} alt="" />
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
+            >
+              <div className="collapse collapse-plus ">
+                <input type="radio" name="my-accordion-3" />
+                <div className="collapse-title text-lg font-medium">
                   Brand Name
                 </div>
-                <div className="collapse-content">
-                  <p>hello</p>
+                <div className="collapse-content ">
+                  <div>
+                    {checkboxData.map((value) => (
+                      <div
+                        key={value}
+                        className="font-semibold flex justify-between"
+                      >
+                        <input
+                          type="checkbox"
+                          value={value}
+                          checked={checkedValues.includes(value)}
+                          onChange={handleBrandFilter}
+                        />
+                        <label htmlFor={value}>{value}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="collapse collapse-plus bg-base-200">
+              <div className="collapse collapse-plus ">
                 <input type="radio" name="my-accordion-3" />
-                <div className="collapse-title text-xl font-medium">
+                <div className="collapse-title text-lg font-medium">
                   Category Name
                 </div>
                 <div className="collapse-content">
-                  <p>hello</p>
+                  {categoryData.map((value) => (
+                    <div
+                      key={value}
+                      className="font-semibold flex justify-between"
+                    >
+                      <option
+                        value={value}
+                        className="cursor-pointer my-1 font-medium"
+                        onClick={handleCategoryFilter}
+                      >
+                        {value}
+                      </option>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="collapse collapse-plus bg-base-200">
+              <div className="collapse collapse-plus ">
                 <input type="radio" name="my-accordion-3" />
-                <div className="collapse-title text-xl font-medium">
+                <div className="collapse-title text-lg font-medium">
                   Price Range
                 </div>
                 <div className="collapse-content">
@@ -130,20 +214,15 @@ export default function Home() {
                   />
                 </div>
               </div>
-              <div className="modal-action">
-                <label htmlFor="my_modal_6" className="btn">
-                  Close!
-                </label>
-              </div>
-            </div>
+            </ul>
           </div>
         </div>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 lg:gap-5 md:gap-3 gap-2 mt-10 place-items-center my-5">
-        {products?.result?.map((product) => (
+        {filteredProducts?.map((product) => (
           <div
             key={product._id}
-            className="card card-compact lg:w-[350px] bg-base-100 shadow-xl border-y-2 border-teal-600 h-[400px]"
+            className="card card-compact lg:w-[350px]  shadow-xl border-y-2 border-teal-600 h-[400px] bg-slate-200"
           >
             <figure>
               <img
@@ -154,15 +233,11 @@ export default function Home() {
             <div className="card-body">
               <h2 className="card-title flex justify-between">
                 {product.name}
-                <div className="flex gap-2">
-                  <div className="badge badge-secondary">{product.brand}</div>
-                  <div className="badge badge-secondary">
-                    {product.category}
-                  </div>
-                </div>
               </h2>
               <p>Sales: {product.sales}</p>
-              <div className="card-actions justify-end">
+              <div className="card-actions ">
+                <div className="badge badge-secondary">{product.brand}</div>
+                <div className="badge badge-secondary">{product.category}</div>
                 <div className="badge badge-outline">
                   Stocks: {product.stock}
                 </div>
