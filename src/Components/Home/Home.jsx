@@ -87,7 +87,7 @@ export default function Home() {
     const filtered = products?.result?.filter((product) => {
       return product.category === value;
     });
-    console.log("Category", filtered);
+    setFilteredProducts(filtered);
   };
 
   const checkboxData = [
@@ -103,7 +103,7 @@ export default function Home() {
     "Fossil",
   ];
 
-  const categoryData = ["Sneakers", "Accessories", "Shoes", "Star Trek"];
+  const categoryData = ["Sneakers", "Accessories", "Shoes", "Apparel"];
   if (isLoading)
     return <span className="loading loading-bars loading-lg"></span>;
   if (isError) return <p>Error...</p>;
