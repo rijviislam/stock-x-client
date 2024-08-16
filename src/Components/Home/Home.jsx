@@ -2,21 +2,23 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import Filter from "../../assets/setting.png";
-import Sort from "../../assets/sort.png";
 
 export default function Home() {
   const [searchName, setSearchName] = useState("");
   const [page, setPage] = useState(1);
   const [inputValue, setInputValue] = useState("");
   const [checkedValues, setCheckedValues] = useState([]);
-  const [priceRange, setPriceRange] = useState(7000);
-  const [sortOrder, setSortOrder] = useState("lowToHigh");
-  const [pageCount, setPageCount] = useState(0);
-  const [products, setProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [priceRange, setPriceRange] = useState(3000);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [sortByDate, setSortByDate] = useState(false);
+  const [sortPriceOrder, setSortPriceOrder] = useState("lowToHigh");
 
-  const { data, isLoading, isError } = useQuery({
+  // FETCH THE PRODUCT //
+  const {
+    data: products = { result: [], pagination: { pageCount: 0 } },
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["products", page, searchName],
     queryFn: async ({ queryKey }) => {
       const [_key, page, searchName] = queryKey;
@@ -29,103 +31,104 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (data?.pagination) {
-      setPageCount(data.pagination.pageCount);
+    if (products?.result) {
+      let filtered = products.result.slice();
+
+      // BRAND FILTERING //
+      if (checkedValues.length > 0) {
+        filtered = filtered.filter((product) =>
+          checkedValues.includes(product.brand)
+        );
+      }
+      // CATEGORY FILTERING //
+      if (selectedCategory) {
+        filtered = filtered.filter(
+          (product) => product.category === selectedCategory
+        );
+      }
+      // PRICE RANGE FILTERING //
+      if (priceRange !== 3000) {
+        filtered = filtered.filter((product) => product.price <= priceRange);
+      }
+
+      //SORTING //
+      if (sortPriceOrder === "lowToHigh") {
+        filtered.sort((a, b) => a.price - b.price);
+      } else if (sortPriceOrder === "highToLow") {
+        filtered.sort((a, b) => b.price - a.price);
+      }
+
+      // ONLY UPDATE FILTERDpRODUCT WHEN THE FILTERED ARRAY IS DIFFERENT //
+      if (JSON.stringify(filtered) !== JSON.stringify(filteredProducts)) {
+        setFilteredProducts(filtered);
+      }
     }
-    if (data?.result) {
-      setProducts(data.result);
-    }
-  }, [data]);
+  }, [
+    products?.result,
+    checkedValues,
+    selectedCategory,
+    priceRange,
+    sortPriceOrder,
+  ]);
 
-  useEffect(() => {
-    applyFiltersAndSort();
-  }, [products, checkedValues, priceRange, sortOrder, sortByDate]);
-  // useEffect(() => {
-  //   handleSortDate();
-  // }, [products, checkedValues, priceRange]);
-
-  const handlePrev = () => setPage((p) => (p > 1 ? p - 1 : p));
-  const handleNext = () => setPage((p) => (p < pageCount ? p + 1 : p));
-
+  // SEARCH INPUT CHANGE
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
   };
 
+  // SEARCH EXECUTION //
   const handleSearch = () => {
     setSearchName(inputValue);
     setPage(1);
   };
-
+  // SEARCH KEY PRESS //
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       handleSearch();
     }
   };
 
+  // BRAND FILTERING FUNCTION //
   const handleBrandFilter = (event) => {
     const { value, checked } = event.target;
-    let updatedCheckedValues;
-
-    if (checked) {
-      updatedCheckedValues = [...checkedValues, value];
-    } else {
-      updatedCheckedValues = checkedValues.filter((val) => val !== value);
-    }
-    setCheckedValues(updatedCheckedValues);
-  };
-
-  const handleCategoryFilter = (event) => {
-    const { value } = event.target;
-
-    setFilteredProducts(
-      products.filter((product) => {
-        return (
-          product.category === value &&
-          (checkedValues.length === 0 ||
-            checkedValues.includes(product.brand)) &&
-          product.price <= priceRange
-        );
-      })
+    setCheckedValues((prev) =>
+      checked ? [...prev, value] : prev.filter((val) => val !== value)
     );
   };
 
+  // CATEGORY FILTER FUNCTIONALITY //
+  const handleCategoryFilter = (event) => {
+    setSelectedCategory(event.target.value);
+  };
+
+  // PRICE RANGE FUNCTIONALITY //
   const handlePriceRange = (event) => {
-    const value = Number(event.target.value);
-    setPriceRange(value);
+    setPriceRange(Number(event.target.value));
   };
 
+  // SORTING PRICE ORDER //
   const handleSortChange = (order) => {
-    setSortOrder(order);
-    setSortByDate(false);
-  };
-
-  const applyFiltersAndSort = () => {
-    let filtered = products.filter((product) => {
-      return (
-        (checkedValues.length === 0 || checkedValues.includes(product.brand)) &&
-        product.price <= priceRange
+    setSortPriceOrder(order);
+    const sortedProducts = filteredProducts
+      .slice()
+      .sort((a, b) =>
+        order === "lowToHigh" ? a.price - b.price : b.price - a.price
       );
-    });
-
-    if (sortByDate) {
-      filtered = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (sortOrder === "lowToHigh") {
-      filtered = filtered.sort((a, b) => a.price - b.price);
-    } else if (sortOrder === "highToLow") {
-      filtered = filtered.sort((a, b) => b.price - a.price);
-    }
-
-    setFilteredProducts(filtered);
+    setFilteredProducts(sortedProducts);
   };
-  const handleLatestProductsClick = () => {
-    setSortByDate(true);
-    setSortOrder("");
+
+  // PAGINATION //
+  const handlePrev = () => {
+    setPage((p) => (p > 1 ? p - 1 : p));
+  };
+
+  const handleNext = () => {
+    setPage((p) => (p < products?.pagination?.pageCount ? p + 1 : p));
   };
 
   const checkboxData = [
     "Nike",
     "Adidas",
-    "Puma",
     "Asics",
     "Levi's",
     "H&M",
@@ -141,6 +144,7 @@ export default function Home() {
   if (isLoading)
     return <span className="loading loading-bars loading-lg"></span>;
   if (isError) return <p>Error...</p>;
+
   return (
     <div className="my-5">
       <h2 className="text-3xl font-bold mb-4 lg:ml-8 ml-2">Stock x Products</h2>
@@ -172,176 +176,151 @@ export default function Home() {
             </button>
           </label>
         </div>
-        <div className="flex gap-5">
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0}>
-              <button
-                onClick={handleLatestProductsClick}
+        <div>
+          <div className="flex gap-5">
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
                 className="w-[130px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black text-sm"
               >
-                Latest Products
-              </button>
+                Sort by Price
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
+              >
+                <li>
+                  <button
+                    onClick={() => handleSortChange("lowToHigh")}
+                    className={"block px-4 py-2 "}
+                  >
+                    Price Low to High
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => handleSortChange("highToLow")}
+                    className={"block px-4 py-2"}
+                  >
+                    Price High to Low
+                  </button>
+                </li>
+              </ul>
             </div>
-          </div>
-
-          <div className="dropdown dropdown-end">
-            <div
-              tabIndex={0}
-              role="button"
-              className="w-[130px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black text-sm"
-            >
-              Sort by Price
-              <img className="w-5 h-5" src={Sort} alt="Sort" />
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
-            >
-              <li>
-                <button
-                  onClick={() => handleSortChange("lowToHigh")}
-                  className={"block px-4 py-2 "}
-                >
-                  Price: Low to High
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleSortChange("highToLow")}
-                  className={"block px-4 py-2"}
-                >
-                  Price: High to Low
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          <div className="dropdown dropdown-end">
-            <div
-              tabIndex={0}
-              role="button"
-              className="w-[100px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black text-sm"
-            >
-              Filter <img className="w-5 h-5" src={Filter} alt="" />
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
-            >
-              <div className="collapse collapse-plus ">
-                <input type="radio" name="my-accordion-3" />
-                <div className="collapse-title text-lg font-medium">
-                  Brand Name
-                </div>
-                <div className="collapse-content ">
-                  <div>
-                    {checkboxData.map((value) => (
-                      <div
-                        key={value}
-                        className="font-semibold flex justify-between"
-                      >
-                        <input
-                          type="checkbox"
-                          value={value}
-                          checked={checkedValues.includes(value)}
-                          onChange={handleBrandFilter}
-                        />
-                        <label htmlFor={value}>{value}</label>
-                      </div>
-                    ))}
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
+                className="w-[100px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black"
+              >
+                {" "}
+                Filter <img className="w-5 h-5" src={Filter} alt="" />
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow"
+              >
+                <div className="collapse collapse-plus ">
+                  <input type="radio" name="my-accordion-3" />
+                  <div className="collapse-title text-lg font-medium">
+                    Brand Name
+                  </div>
+                  <div className="collapse-content ">
+                    <div>
+                      {checkboxData.map((name) => (
+                        <div className="flex items-center" key={name}>
+                          <input
+                            className="checkbox checkbox-xs"
+                            type="checkbox"
+                            value={name}
+                            checked={checkedValues.includes(name)}
+                            onChange={handleBrandFilter}
+                          />
+                          <label className="ml-2">{name}</label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="collapse collapse-plus ">
-                <input type="radio" name="my-accordion-3" />
-                <div className="collapse-title text-lg font-medium">
-                  Category Name
-                </div>
-                <div className="collapse-content">
-                  {categoryData.map((value) => (
-                    <div
-                      key={value}
-                      className="font-semibold flex justify-between"
-                    >
-                      <option
-                        value={value}
-                        className="cursor-pointer my-1 font-medium"
-                        onClick={handleCategoryFilter}
-                      >
-                        {value}
-                      </option>
+                <div className="collapse collapse-plus">
+                  <input type="radio" name="my-accordion-3" />
+                  <div className="collapse-title text-lg font-medium">
+                    Category Name
+                  </div>
+                  <div className="collapse-content ">
+                    <div>
+                      {categoryData.map((category) => (
+                        <div className="flex items-center" key={category}>
+                          <input
+                            className="radio radio-xs"
+                            type="radio"
+                            name="category"
+                            value={category}
+                            onChange={handleCategoryFilter}
+                          />
+                          <label className="ml-2">{category}</label>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-              <div className="collapse collapse-plus ">
-                <input type="radio" name="my-accordion-3" />
-                <div className="collapse-title text-lg font-medium">
-                  Price Range
+                <div className="collapse collapse-plus">
+                  <input type="radio" name="my-accordion-3" />
+                  <div className="collapse-title text-lg font-medium">
+                    Price Range
+                  </div>
+                  <div className="collapse-content">
+                    <input
+                      type="range"
+                      min="3000"
+                      max="100000"
+                      value={priceRange}
+                      onChange={handlePriceRange}
+                      className="range"
+                    />
+                  </div>
                 </div>
-                <div className="collapse-content">
-                  <input
-                    type="range"
-                    min={0}
-                    max={30000}
-                    value={priceRange}
-                    onChange={handlePriceRange}
-                    className="range range-xs"
-                  />
-                  <span>{priceRange}</span>
-                </div>
-              </div>
-            </ul>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 lg:gap-5 md:gap-3 gap-2 mt-10 place-items-center my-5">
-        {filteredProducts?.map((product) => (
-          <div
-            key={product._id}
-            className="card card-compact lg:w-[350px]  shadow-xl border-y-2 border-teal-600 h-[400px] bg-slate-200"
-          >
-            <figure>
+      <div className="p-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-3 gap-4">
+          {filteredProducts?.map((product) => (
+            <div
+              className="bg-gray-100 p-4 rounded-lg shadow-md h-[350px]"
+              key={product._id}
+            >
               <img
-                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                alt="Shoes"
+                src={product.image}
+                alt={product.name}
+                className="w-full h-40 object-cover mb-4"
               />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title flex justify-between">
-                {product.name}
-              </h2>
-              <p>Sales: {product.sales}</p>
-              <div className="card-actions ">
-                <div className="badge badge-secondary">{product.brand}</div>
-                <div className="badge badge-secondary">{product.category}</div>
-                <div className="badge badge-outline">
-                  Stocks: {product.stock}
-                </div>
-                <div className="badge badge-outline">
-                  Price: {product.price}
-                </div>
-                <div className="badge badge-outline">Date: {product.date}</div>
-              </div>
+              <h3 className="text-lg font-bold mb-2">{product.name}</h3>
+              <p className="text-gray-600">Brand: {product.brand}</p>
+              <p className="text-gray-600">Category: {product.category}</p>
+              <p className="text-teal-500 font-bold mt-2">${product.price}</p>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      <div className="flex justify-center items-center mt-5 gap-2">
+      <div className="flex justify-center items-center gap-4 my-8">
         <button
-          disabled={page === 1}
-          className="btn btn-sm bg-teal-800"
+          className="btn btn-sm"
           onClick={handlePrev}
+          disabled={page === 1}
         >
-          Prev
+          Previous
         </button>
-        <span className="text-teal-600 font-semibold">
-          Page {page} of {pageCount}
+        <span>
+          Page {page} of {products?.pagination?.pageCount}
         </span>
         <button
-          disabled={page === pageCount}
-          className="btn btn-sm bg-teal-800"
+          className="btn btn-sm"
           onClick={handleNext}
+          disabled={page === products?.pagination?.pageCount}
         >
           Next
         </button>
