@@ -8,10 +8,9 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [inputValue, setInputValue] = useState("");
   const [checkedValues, setCheckedValues] = useState([]);
+  const [priceRange, setPriceRange] = useState(30000); // Default to max value
   const [pageCount, setPageCount] = useState(0);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [minPrice, setMinPrice] = useState(3000);
-  const [maxPrice, setMaxPrice] = useState(30000);
 
   const {
     data: products = { result: [], pagination: { pageCount: 0 } },
@@ -35,6 +34,7 @@ export default function Home() {
     }
 
     if (products?.result) {
+      // Initially, set all products as filtered products
       setFilteredProducts(products.result);
     }
   }, [products]);
@@ -73,44 +73,36 @@ export default function Home() {
     }
     setCheckedValues(updatedCheckedValues);
 
-    applyFilters(updatedCheckedValues, minPrice, maxPrice);
+    applyFilters(updatedCheckedValues, priceRange);
   };
 
   const handleCategoryFilter = (event) => {
     const { value } = event.target;
+
     const filtered = products?.result?.filter((product) => {
-      return product.category === value;
+      return (
+        product.category === value &&
+        (checkedValues.length === 0 || checkedValues.includes(product.brand)) &&
+        product.price <= priceRange
+      );
     });
+
     setFilteredProducts(filtered);
   };
 
-  const handlePriceRangeChange = (event) => {
-    const { name, value } = event.target;
-    if (name === "minPrice") {
-      setMinPrice(value);
-    } else {
-      setMaxPrice(value);
-    }
-
-    applyFilters(
-      checkedValues,
-      value === "minPrice" ? value : minPrice,
-      value === "maxPrice" ? value : maxPrice
-    );
+  const handlePriceRange = (event) => {
+    const value = Number(event.target.value);
+    setPriceRange(value);
+    applyFilters(checkedValues, value);
   };
 
-  const applyFilters = (brands, min, max) => {
-    let filtered = products?.result;
-
-    if (brands.length) {
-      filtered = filtered.filter((product) => brands.includes(product.brand));
-    }
-
-    if (min !== undefined && max !== undefined) {
-      filtered = filtered.filter(
-        (product) => product.price >= min && product.price <= max
+  const applyFilters = (checkedValues, priceRange) => {
+    const filtered = products?.result?.filter((product) => {
+      return (
+        (checkedValues.length === 0 || checkedValues.includes(product.brand)) &&
+        product.price <= priceRange
       );
-    }
+    });
 
     setFilteredProducts(filtered);
   };
@@ -133,6 +125,7 @@ export default function Home() {
   if (isLoading)
     return <span className="loading loading-bars loading-lg"></span>;
   if (isError) return <p>Error...</p>;
+
   return (
     <div className="my-5">
       <h2 className="text-3xl font-bold mb-4 lg:ml-8 ml-2">Stock x Products</h2>
@@ -230,28 +223,15 @@ export default function Home() {
                   Price Range
                 </div>
                 <div className="collapse-content">
-                  <div className="flex flex-col">
-                    <label>Min Price: ${minPrice}</label>
-                    <input
-                      type="range"
-                      name="minPrice"
-                      min={3000}
-                      max={maxPrice}
-                      value={minPrice}
-                      className="range range-xs"
-                      onChange={handlePriceRangeChange}
-                    />
-                    <label>Max Price: ${maxPrice}</label>
-                    <input
-                      type="range"
-                      name="maxPrice"
-                      min={minPrice}
-                      max={30000}
-                      value={maxPrice}
-                      className="range range-xs"
-                      onChange={handlePriceRangeChange}
-                    />
-                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={30000}
+                    value={priceRange}
+                    onChange={handlePriceRange}
+                    className="range range-xs"
+                  />
+                  <span>{priceRange}</span>
                 </div>
               </div>
             </ul>
@@ -262,44 +242,48 @@ export default function Home() {
         {filteredProducts?.map((product) => (
           <div
             key={product._id}
-            className="card lg:w-[300px] md:w-[280px] w-[260px] bg-base-100 shadow-xl"
+            className="card card-compact lg:w-[350px]  shadow-xl border-y-2 border-teal-600 h-[400px] bg-slate-200"
           >
             <figure>
               <img
-                src={product.image}
-                alt={product.name}
-                className="w-[250px] h-[250px]"
+                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                alt="Shoes"
               />
             </figure>
             <div className="card-body">
-              <h2 className="card-title">{product.name}</h2>
-              <p>Price: ${product.price}</p>
-              <div className="card-actions justify-end">
-                <button className="btn bg-teal-500 hover:bg-teal-600">
-                  Add to Cart
-                </button>
+              <h2 className="card-title flex justify-between">
+                {product.name}
+              </h2>
+              <p>Sales: {product.sales}</p>
+              <div className="card-actions ">
+                <div className="badge badge-secondary">{product.brand}</div>
+                <div className="badge badge-secondary">{product.category}</div>
+                <div className="badge badge-outline">
+                  Stocks: {product.stock}
+                </div>
+                <div className="badge badge-outline">
+                  Price: {product.price}
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="flex justify-center gap-5 my-8">
+      <div className="flex justify-center items-center mt-5 gap-2">
         <button
+          disabled={page === 1}
+          className="btn btn-sm bg-teal-800"
           onClick={handlePrev}
-          className={`btn bg-teal-500 ${page <= 1 ? "cursor-not-allowed" : ""}`}
-          disabled={page <= 1}
         >
-          Previous
+          Prev
         </button>
-        <p className="flex items-center text-xl font-bold text-teal-500">
+        <span className="text-teal-600 font-semibold">
           Page {page} of {pageCount}
-        </p>
+        </span>
         <button
+          disabled={page === pageCount}
+          className="btn btn-sm bg-teal-800"
           onClick={handleNext}
-          className={`btn bg-teal-500 ${
-            page >= pageCount ? "cursor-not-allowed" : ""
-          }`}
-          disabled={page >= pageCount}
         >
           Next
         </button>

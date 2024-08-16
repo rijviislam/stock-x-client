@@ -28,32 +28,32 @@ export default function Navbar() {
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
           >
             <li>
-              <a>About us</a>
+              <Link to="/about">About us</Link>
             </li>
             <li>
-              <a>Contact us</a>
+              <Link to="/contact">Contact us</Link>
             </li>
             <li>
-              <a>Help</a>
+              <Link to="/help">Help</Link>
             </li>
           </ul>
         </div>
         {/* <a className="btn btn-ghost text-xl">Stock X</a> */}
-        <Link className="w-10 h-10">
+        <Link className="w-10 h-10" to="/">
           <img src={Logo} alt="x" />
         </Link>
       </div>
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
           <li>
-            <a>About us</a>
+            <Link to="/about">About us</Link>
           </li>
 
           <li>
-            <a>Contact us</a>
+            <Link to="/contact">Contact us</Link>
           </li>
           <li>
-            <a>Help</a>
+            <Link to="/help">Help</Link>
           </li>
         </ul>
       </div>
