@@ -290,18 +290,22 @@ export default function Home() {
         <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-3 gap-4">
           {filteredProducts?.map((product) => (
             <div
-              className="bg-gray-100 p-4 rounded-lg shadow-md h-[350px]"
+              className="bg-gray-100 p-4 rounded-lg shadow-md h-[420px]"
               key={product._id}
             >
               <img
-                src={product.image}
+                src={product.productImage}
                 alt={product.name}
                 className="w-full h-40 object-cover mb-4"
               />
               <h3 className="text-lg font-bold mb-2">{product.name}</h3>
               <p className="text-gray-600">Brand: {product.brand}</p>
               <p className="text-gray-600">Category: {product.category}</p>
+              <p className="text-gray-600">Category: {product.description}</p>
               <p className="text-teal-500 font-bold mt-2">${product.price}</p>
+              <button className="btn-sm border border-teal-300 rounded-lg mt-2">
+                Buy now
+              </button>
             </div>
           ))}
         </div>
