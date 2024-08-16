@@ -10,6 +10,8 @@ export default function Home() {
   const [checkedValues, setCheckedValues] = useState([]);
   const [pageCount, setPageCount] = useState(0);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [minPrice, setMinPrice] = useState(3000);
+  const [maxPrice, setMaxPrice] = useState(30000);
 
   const {
     data: products = { result: [], pagination: { pageCount: 0 } },
@@ -59,6 +61,7 @@ export default function Home() {
       handleSearch();
     }
   };
+
   const handleBrandFilter = (event) => {
     const { value, checked } = event.target;
     let updatedCheckedValues;
@@ -68,25 +71,47 @@ export default function Home() {
     } else {
       updatedCheckedValues = checkedValues.filter((val) => val !== value);
     }
-    console.log(updatedCheckedValues);
     setCheckedValues(updatedCheckedValues);
 
-    const filtered =
-      // can not understand the (result) //
-      products?.result?.filter((product) => {
-        return (
-          updatedCheckedValues.length === 0 ||
-          updatedCheckedValues.includes(product.brand)
-        );
-      }) || [];
-
-    setFilteredProducts(filtered);
+    applyFilters(updatedCheckedValues, minPrice, maxPrice);
   };
+
   const handleCategoryFilter = (event) => {
     const { value } = event.target;
     const filtered = products?.result?.filter((product) => {
       return product.category === value;
     });
+    setFilteredProducts(filtered);
+  };
+
+  const handlePriceRangeChange = (event) => {
+    const { name, value } = event.target;
+    if (name === "minPrice") {
+      setMinPrice(value);
+    } else {
+      setMaxPrice(value);
+    }
+
+    applyFilters(
+      checkedValues,
+      value === "minPrice" ? value : minPrice,
+      value === "maxPrice" ? value : maxPrice
+    );
+  };
+
+  const applyFilters = (brands, min, max) => {
+    let filtered = products?.result;
+
+    if (brands.length) {
+      filtered = filtered.filter((product) => brands.includes(product.brand));
+    }
+
+    if (min !== undefined && max !== undefined) {
+      filtered = filtered.filter(
+        (product) => product.price >= min && product.price <= max
+      );
+    }
+
     setFilteredProducts(filtered);
   };
 
@@ -104,10 +129,10 @@ export default function Home() {
   ];
 
   const categoryData = ["Sneakers", "Accessories", "Shoes", "Apparel"];
+
   if (isLoading)
     return <span className="loading loading-bars loading-lg"></span>;
   if (isError) return <p>Error...</p>;
-
   return (
     <div className="my-5">
       <h2 className="text-3xl font-bold mb-4 lg:ml-8 ml-2">Stock x Products</h2>
@@ -205,13 +230,28 @@ export default function Home() {
                   Price Range
                 </div>
                 <div className="collapse-content">
-                  <input
-                    type="range"
-                    min={0}
-                    max="100"
-                    value="40"
-                    className="range range-xs"
-                  />
+                  <div className="flex flex-col">
+                    <label>Min Price: ${minPrice}</label>
+                    <input
+                      type="range"
+                      name="minPrice"
+                      min={3000}
+                      max={maxPrice}
+                      value={minPrice}
+                      className="range range-xs"
+                      onChange={handlePriceRangeChange}
+                    />
+                    <label>Max Price: ${maxPrice}</label>
+                    <input
+                      type="range"
+                      name="maxPrice"
+                      min={minPrice}
+                      max={30000}
+                      value={maxPrice}
+                      className="range range-xs"
+                      onChange={handlePriceRangeChange}
+                    />
+                  </div>
                 </div>
               </div>
             </ul>
@@ -222,48 +262,44 @@ export default function Home() {
         {filteredProducts?.map((product) => (
           <div
             key={product._id}
-            className="card card-compact lg:w-[350px]  shadow-xl border-y-2 border-teal-600 h-[400px] bg-slate-200"
+            className="card lg:w-[300px] md:w-[280px] w-[260px] bg-base-100 shadow-xl"
           >
             <figure>
               <img
-                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                alt="Shoes"
+                src={product.image}
+                alt={product.name}
+                className="w-[250px] h-[250px]"
               />
             </figure>
             <div className="card-body">
-              <h2 className="card-title flex justify-between">
-                {product.name}
-              </h2>
-              <p>Sales: {product.sales}</p>
-              <div className="card-actions ">
-                <div className="badge badge-secondary">{product.brand}</div>
-                <div className="badge badge-secondary">{product.category}</div>
-                <div className="badge badge-outline">
-                  Stocks: {product.stock}
-                </div>
-                <div className="badge badge-outline">
-                  Price: {product.price}
-                </div>
+              <h2 className="card-title">{product.name}</h2>
+              <p>Price: ${product.price}</p>
+              <div className="card-actions justify-end">
+                <button className="btn bg-teal-500 hover:bg-teal-600">
+                  Add to Cart
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="flex justify-center items-center mt-5 gap-2">
+      <div className="flex justify-center gap-5 my-8">
         <button
-          disabled={page === 1}
-          className="btn btn-sm bg-teal-800"
           onClick={handlePrev}
+          className={`btn bg-teal-500 ${page <= 1 ? "cursor-not-allowed" : ""}`}
+          disabled={page <= 1}
         >
-          Prev
+          Previous
         </button>
-        <span className="text-teal-600 font-semibold">
+        <p className="flex items-center text-xl font-bold text-teal-500">
           Page {page} of {pageCount}
-        </span>
+        </p>
         <button
-          disabled={page === pageCount}
-          className="btn btn-sm bg-teal-800"
           onClick={handleNext}
+          className={`btn bg-teal-500 ${
+            page >= pageCount ? "cursor-not-allowed" : ""
+          }`}
+          disabled={page >= pageCount}
         >
           Next
         </button>
