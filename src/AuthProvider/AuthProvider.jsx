@@ -1,12 +1,13 @@
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { GoogleAuthProvider } from "firebase/auth/web-extension";
-import React, { createContext, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import auth from "../Firebase/Firebase.config";
 export const AuthContext = createContext(null);
 const googleProvider = new GoogleAuthProvider();
@@ -26,6 +27,17 @@ export default function AuthProvider({ children }) {
     setLoader(true);
     return signInWithEmailAndPassword(auth, email, password);
   };
+
+  //   OBSERVER USER IS HE/SHE LOGIN OR NOT //
+  useEffect(() => {
+    const unSubscribe = onAuthStateChanged(auth, (observ) => {
+      setUser(observ);
+      setLoader(false);
+    });
+    return () => {
+      unSubscribe();
+    };
+  }, [reload]);
   // UPDATE USER IMAGE AND NAME //
   const updateImageAndName = (name, image) => {
     return updateProfile(auth.currentUser, {

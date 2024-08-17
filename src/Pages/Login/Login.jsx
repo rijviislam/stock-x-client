@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
+import SocialLogin from "../../Components/SocialLogin/SocialLogin";
 import useAuth from "../../Hooks/useAuth";
 
 export default function Login() {
@@ -85,9 +86,7 @@ export default function Login() {
         </form>
         <div className="flex items-center pt-4 space-x-1">
           <div className="flex-1 h-px sm:w-16 bg-gray-700 dark:bg-gray-300"></div>
-          <p className="px-3 text-sm text-gray-400 dark:text-gray-600">
-            Login with social accounts
-          </p>
+          <SocialLogin />
           <div className="flex-1 h-px sm:w-16 bg-gray-700 dark:bg-gray-300"></div>
         </div>
         <p className="text-xs text-center sm:px-6 text-gray-400 dark:text-gray-600">

@@ -23,7 +23,7 @@ export default function Home() {
     queryFn: async ({ queryKey }) => {
       const [_key, page, searchName] = queryKey;
       const res = await axios.get(
-        `http://localhost:5001/products?page=${page}&name=${searchName}`
+        `https://stock-x-server.vercel.app/products?page=${page}&name=${searchName}`
       );
       return res.data;
     },
@@ -56,6 +56,12 @@ export default function Home() {
         filtered.sort((a, b) => a.price - b.price);
       } else if (sortPriceOrder === "highToLow") {
         filtered.sort((a, b) => b.price - a.price);
+      } else if (sortPriceOrder === "newestFirst") {
+        filtered.sort((a, b) => {
+          const dateA = new Date(a.productCreationDateandTime);
+          const dateB = new Date(b.productCreationDateandTime);
+          return dateB - dateA;
+        });
       }
 
       // ONLY UPDATE FILTERDpRODUCT WHEN THE FILTERED ARRAY IS DIFFERENT //
@@ -125,6 +131,9 @@ export default function Home() {
   const handleNext = () => {
     setPage((p) => (p < products?.pagination?.pageCount ? p + 1 : p));
   };
+  const handleSortLatest = () => {
+    setSortPriceOrder("newestFirst");
+  };
 
   const checkboxData = [
     "Nike",
@@ -140,16 +149,20 @@ export default function Home() {
   ];
 
   const categoryData = ["Sneakers", "Accessories", "Shoes", "Apparel"];
-
+  const options = { year: "numeric", month: "2-digit", day: "2-digit" };
   if (isLoading)
-    return <span className="loading loading-bars loading-lg"></span>;
+    return (
+      <div className="flex w-full h-full items-center justify-center">
+        <span className="loading loading-bars loading-lg "></span>
+      </div>
+    );
   if (isError) return <p>Error...</p>;
 
   return (
     <div className="my-5">
-      <h2 className="text-3xl font-bold mb-4 lg:ml-8 ml-2">Stock x Products</h2>
+      <h2 className="text-3xl font-bold mb-4 lg:ml-8 ml-2">Stock-X Products</h2>
 
-      <div className="flex justify-between px-10">
+      <div className="flex lg:flex-row md:flex-row items-center flex-col justify-between px-3">
         <div className="flex mx-4 my-5">
           <label className="input w-[400px] border-teal-500 flex items-center gap-2 bg-white text-black">
             <input
@@ -178,11 +191,19 @@ export default function Home() {
         </div>
         <div>
           <div className="flex gap-5">
+            <div
+              tabIndex={0}
+              role="button"
+              className="w-[110px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black text-sm"
+              onClick={handleSortLatest}
+            >
+              Sort by Date
+            </div>
             <div className="dropdown dropdown-end">
               <div
                 tabIndex={0}
                 role="button"
-                className="w-[130px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black text-sm"
+                className="w-[110px] flex h-[45px] items-center justify-between p-3 rounded-lg m-1 border border-teal-500 bg-white text-black text-sm"
               >
                 Sort by Price
               </div>
@@ -279,6 +300,9 @@ export default function Home() {
                       onChange={handlePriceRange}
                       className="range"
                     />
+                    <small className="text-sm font-semibold">
+                      {priceRange}
+                    </small>
                   </div>
                 </div>
               </ul>
@@ -287,7 +311,7 @@ export default function Home() {
         </div>
       </div>
       <div className="p-5">
-        <div className="grid grid-cols-2 lg:grid-cols-4 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-4">
           {filteredProducts?.map((product) => (
             <div
               className="bg-gray-100 p-4 rounded-lg shadow-md h-[420px]"
@@ -301,8 +325,18 @@ export default function Home() {
               <h3 className="text-lg font-bold mb-2">{product.name}</h3>
               <p className="text-gray-600">Brand: {product.brand}</p>
               <p className="text-gray-600">Category: {product.category}</p>
-              <p className="text-gray-600">Category: {product.description}</p>
-              <p className="text-teal-500 font-bold mt-2">${product.price}</p>
+              <p className="text-gray-600">
+                Description: {product.description}
+              </p>
+              <div className="flex justify-between">
+                <p className="text-teal-500 font-bold mt-2">${product.price}</p>
+                <p className="text-teal-500  mt-2">
+                  Date:
+                  {new Date(
+                    product.productCreationDateandTime
+                  ).toLocaleDateString("en-US", options)}
+                </p>
+              </div>
               <button className="btn-sm border border-teal-300 rounded-lg mt-2">
                 Buy now
               </button>
