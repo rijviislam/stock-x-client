@@ -1,4 +1,4 @@
-## Project Setup
+## Getting Started
 
 To get a local copy of this project up and running, follow these steps:
 
@@ -12,7 +12,7 @@ To get a local copy of this project up and running, follow these steps:
 1. **Clone the repository** or **download the ZIP file**:
    - **Clone**:
      ```bash
-     https://github.com/rijviislam/techSpotter-client.git
+     https://github.com/rijviislam/stock-x-client.git
      ```
    - **Download ZIP**:
      - Click on the green "Code" button at the top right of this repository.
@@ -38,3 +38,19 @@ To get a local copy of this project up and running, follow these steps:
   appId: "YOUR_APP_ID"
 };
 export default firebaseConfig;
+
+3. **Run the project::**
+     ```bash
+     npm install
+6. **Environment Variables**:
+
+Make sure to create a .env file at the root of your project if any environment variables are needed for Firebase or other services. Example:
+
+     
+     REACT_APP_FIREBASE_API_KEY=your_api_key
+     REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
+
+
+**Additional Notes:**
+For Firebase authentication and storage, ensure that your Firebase project is properly set up in the Firebase console and that all necessary APIs are enabled.
+MongoDB connection will likely be managed by the backend, so ensure the backend server is configured and running properly.
